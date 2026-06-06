@@ -58,7 +58,11 @@ func (c *Client) CreateVolume(ctx context.Context, req provisioner.CreateVolumeR
 }
 
 func (c *Client) DeleteVolume(ctx context.Context, volumeID string) error {
-	return c.doJSON(ctx, http.MethodDelete, "/v1/volumes/"+escapePath(volumeID), nil, nil)
+	err := c.doJSON(ctx, http.MethodDelete, "/v1/volumes/"+escapePath(volumeID), nil, nil)
+	if isNotFound(err) {
+		return nil
+	}
+	return err
 }
 
 func (c *Client) VolumeExists(ctx context.Context, volumeID string) (bool, error) {

@@ -60,3 +60,34 @@ func TestClientCreateVolume(t *testing.T) {
 		t.Fatalf("unexpected volume: %#v", vol)
 	}
 }
+
+func TestClientDeleteVolume(t *testing.T) {
+	t.Parallel()
+
+	const volumeID = "abc123/pvc-1"
+	deleted := false
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodDelete && r.URL.Path == "/v1/volumes/abc123/pvc-1":
+			deleted = true
+			w.WriteHeader(http.StatusNoContent)
+		case r.Method == http.MethodDelete && r.URL.Path == "/v1/volumes/missing/pvc-1":
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	client := NewClient(ClientConfig{BaseURL: srv.URL})
+	if err := client.DeleteVolume(context.Background(), volumeID); err != nil {
+		t.Fatalf("DeleteVolume failed: %v", err)
+	}
+	if !deleted {
+		t.Fatal("expected delete request to reach backend")
+	}
+	if err := client.DeleteVolume(context.Background(), "missing/pvc-1"); err != nil {
+		t.Fatalf("DeleteVolume should treat 404 as success: %v", err)
+	}
+}

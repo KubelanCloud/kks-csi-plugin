@@ -32,6 +32,14 @@ func bindMount(source, target string) error {
 	return m.Mount(source, target, "", []string{"bind"})
 }
 
+func isHostMounted(path string) bool {
+	return isMounted(path)
+}
+
+func unmountHost(path string) error {
+	return nil
+}
+
 func isMounted(path string) bool {
 	m := newMounter()
 	notMnt, err := m.IsLikelyNotMountPoint(path)
