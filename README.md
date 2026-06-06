@@ -58,13 +58,24 @@ Driver name: `storage.csi.kloud.team`
 
 ### From the published chart repository
 
-Charts are published to GitHub Pages on each release:
+Charts are published as [GitHub Releases](https://github.com/KubelanCloud/kks-csi-plugin/releases) and to GHCR as OCI artifacts.
+
+**OCI (recommended):**
 
 ```bash
-helm repo add kloud-csi https://kubelancloud.github.io/kks-csi-plugin
-helm repo update
+helm install kloud-csi oci://ghcr.io/kubelancloud/charts/kloud-csi \
+  --version 0.1.0 \
+  --namespace kube-system \
+  --create-namespace \
+  --set serverURL=https://csi.example.kloud.team \
+  --set accessToken="YOUR_CLUSTER_CSI_ACCESS_TOKEN"
+```
 
-helm install kloud-csi kloud-csi/kloud-csi \
+**GitHub Release asset:**
+
+```bash
+helm install kloud-csi \
+  https://github.com/KubelanCloud/kks-csi-plugin/releases/download/kloud-csi-0.1.0/kloud-csi-0.1.0.tgz \
   --namespace kube-system \
   --create-namespace \
   --set serverURL=https://csi.example.kloud.team \
@@ -108,7 +119,7 @@ kubectl get storageclass kloud-csi
 
 Chart path: [`charts/kloud-csi`](charts/kloud-csi)
 
-Published releases are available at [GitHub Releases](https://github.com/KubelanCloud/kks-csi-plugin/releases) and via the Helm repository at `https://kubelancloud.github.io/kks-csi-plugin`. Bump `version` in [`Chart.yaml`](charts/kloud-csi/Chart.yaml) to publish a new chart release.
+Published releases are available at [GitHub Releases](https://github.com/KubelanCloud/kks-csi-plugin/releases) and as OCI charts at `oci://ghcr.io/kubelancloud/charts/kloud-csi`. Bump `version` in [`Chart.yaml`](charts/kloud-csi/Chart.yaml) to publish a new chart release.
 
 ### Required values
 
