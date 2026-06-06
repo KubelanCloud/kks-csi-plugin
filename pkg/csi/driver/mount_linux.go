@@ -106,16 +106,38 @@ func cleanupMountPoint(target string, mounter *mount.SafeFormatAndMount) error {
 	return mount.CleanupMountPoint(target, mounter, true)
 }
 
+func hostMount(args ...string) ([]byte, error) {
+	return exec.Command("nsenter", append([]string{"--target", "1", "--mount", "--"}, args...)...).CombinedOutput()
+}
+
+func isHostMounted(path string) bool {
+	out, err := hostMount("findmnt", "-n", path)
+	return err == nil && strings.TrimSpace(string(out)) != ""
+}
+
 func bindMount(source, target string) error {
-	if !isMounted(source) {
+	if !isHostMounted(source) && !isMounted(source) {
 		return fmt.Errorf("staging path %s is not mounted", source)
 	}
-	if isMounted(target) {
+	if isHostMounted(target) {
 		return nil
 	}
-	mounter := mount.New("")
-	if err := mounter.Mount(source, target, "", []string{"bind"}); err != nil {
-		return fmt.Errorf("bind mount %s -> %s: %w", source, target, err)
+	if out, err := hostMount("mkdir", "-p", target); err != nil {
+		return fmt.Errorf("create bind mount target %s: %w: %s", target, err, strings.TrimSpace(string(out)))
+	}
+	if out, err := hostMount("mount", "--bind", source, target); err != nil {
+		return fmt.Errorf("bind mount %s -> %s: %w: %s", source, target, err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
+func unmountHost(path string) error {
+	if !isHostMounted(path) {
+		return nil
+	}
+	out, err := hostMount("umount", path)
+	if err != nil {
+		return fmt.Errorf("umount %s: %w: %s", path, err, strings.TrimSpace(string(out)))
 	}
 	return nil
 }

@@ -72,6 +72,9 @@ func (s *NodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstage
 	}
 
 	mounter := newMounter()
+	if err := unmountHost(req.GetStagingTargetPath()); err != nil {
+		return nil, internalError(err)
+	}
 	if err := cleanupMountPoint(req.GetStagingTargetPath(), mounter); err != nil {
 		return nil, internalError(err)
 	}
@@ -90,7 +93,7 @@ func (s *NodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublish
 		return nil, invalidArgument("staging target path is required")
 	}
 
-	if !isMounted(req.GetStagingTargetPath()) {
+	if !isMounted(req.GetStagingTargetPath()) && !isHostMounted(req.GetStagingTargetPath()) {
 		return nil, internalError(fmt.Errorf("staging path %s is not mounted", req.GetStagingTargetPath()))
 	}
 
@@ -111,6 +114,9 @@ func (s *NodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpub
 	}
 
 	mounter := newMounter()
+	if err := unmountHost(req.GetTargetPath()); err != nil {
+		return nil, internalError(err)
+	}
 	if err := cleanupMountPoint(req.GetTargetPath(), mounter); err != nil {
 		return nil, internalError(err)
 	}
