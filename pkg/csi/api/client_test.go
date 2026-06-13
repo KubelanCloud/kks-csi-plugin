@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -40,6 +41,17 @@ func TestClientCreateVolume(t *testing.T) {
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/volumes" {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read request body: %v", err)
+		}
+		var got provisioner.CreateVolumeRequest
+		if err := json.Unmarshal(body, &got); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if got.Parameters["kks.kloud/provisioning-mode"] != "immediate" {
+			t.Fatalf("unexpected parameters: %#v", got.Parameters)
+		}
 		w.WriteHeader(http.StatusCreated)
 		_ = json.NewEncoder(w).Encode(provisioner.Volume{
 			VolumeID:  "abc123/k8s-volumes/pvc-1",
@@ -52,6 +64,9 @@ func TestClientCreateVolume(t *testing.T) {
 	vol, err := client.CreateVolume(context.Background(), provisioner.CreateVolumeRequest{
 		Name:      "pvc-1",
 		SizeBytes: 1024,
+		Parameters: map[string]string{
+			"kks.kloud/provisioning-mode": "immediate",
+		},
 	})
 	if err != nil {
 		t.Fatalf("CreateVolume failed: %v", err)

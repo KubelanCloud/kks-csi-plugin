@@ -44,11 +44,20 @@ sidecars:
 
 storageClass:
   enabled: true
-  name: kloud-csi
-  isDefault: false
   reclaimPolicy: Delete
-  volumeBindingMode: WaitForFirstConsumer
   allowVolumeExpansion: false
+  immediate:
+    enabled: true
+    name: kloud-csi
+    isDefault: true
+    parameters:
+      kks.kloud/provisioning-mode: immediate
+  waitForFirstConsumer:
+    enabled: true
+    name: kloud-csi-wait-for-first-consumer
+    isDefault: false
+    parameters:
+      kks.kloud/provisioning-mode: deferred
 
 controller:
   replicas: 1

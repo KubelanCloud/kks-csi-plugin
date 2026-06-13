@@ -19,8 +19,9 @@ type Volume struct {
 }
 
 type CreateVolumeRequest struct {
-	Name      string `json:"name"`
-	SizeBytes int64  `json:"size_bytes"`
+	Name       string            `json:"name"`
+	SizeBytes  int64             `json:"size_bytes"`
+	Parameters map[string]string `json:"parameters,omitempty"`
 }
 
 type PublishVolumeRequest struct {

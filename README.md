@@ -40,7 +40,7 @@ Standard CSI sidecars are bundled with each workload:
 
 ## Features
 
-- Dynamic provisioning via a `StorageClass` (optional, enabled by default)
+- Dynamic provisioning via two `StorageClass` types (optional, enabled by default)
 - Controller publish/unpublish (attach/detach)
 - Node stage/unstage and publish/unpublish (mount operations)
 - Block volumes are not supported
@@ -144,11 +144,14 @@ Helm fails at render time if `serverURL` or credentials are missing.
 | `existingSecret` | `""` | Use an existing secret instead of creating one |
 | `existingSecretAccessTokenKey` | `access-token` | Key in the secret holding the token |
 | `driver.name` | `storage.csi.kloud.team` | CSI driver name |
-| `storageClass.enabled` | `true` | Create a `StorageClass` |
-| `storageClass.name` | `kloud-csi` | StorageClass name |
-| `storageClass.isDefault` | `false` | Mark as the default StorageClass |
+| `storageClass.enabled` | `true` | Create StorageClasses |
+| `storageClass.immediate.enabled` | `true` | Create immediate-binding StorageClass |
+| `storageClass.immediate.name` | `kloud-csi` | Immediate-binding StorageClass name |
+| `storageClass.immediate.isDefault` | `true` | Mark immediate StorageClass as default |
+| `storageClass.waitForFirstConsumer.enabled` | `true` | Create WaitForFirstConsumer StorageClass |
+| `storageClass.waitForFirstConsumer.name` | `kloud-csi-wait-for-first-consumer` | WaitForFirstConsumer StorageClass name |
+| `storageClass.waitForFirstConsumer.isDefault` | `false` | Mark WaitForFirstConsumer StorageClass as default |
 | `storageClass.reclaimPolicy` | `Delete` | `Delete` or `Retain` |
-| `storageClass.volumeBindingMode` | `WaitForFirstConsumer` | Volume binding mode |
 | `controller.replicas` | `1` | Controller deployment replicas |
 | `rbac.create` | `true` | Create RBAC for controller and node |
 
@@ -159,7 +162,8 @@ See [`charts/kloud-csi/values.yaml`](charts/kloud-csi/values.yaml) for the full 
 The chart creates:
 
 - `CSIDriver` — registers the driver with Kubernetes
-- `StorageClass` — optional, for dynamic provisioning
+- `StorageClass` (Immediate) — optional, default class for immediate provisioning
+- `StorageClass` (WaitForFirstConsumer) — optional, delayed provisioning until pod scheduling
 - `Deployment` — controller + sidecars
 - `DaemonSet` — node plugin + registrar on every node
 - `ConfigMap` — minimal HCL stub (settings come from env vars)
@@ -179,7 +183,7 @@ helm uninstall kloud-csi --namespace kube-system
 
 ## Using persistent volumes
 
-With the default StorageClass installed, create a PVC:
+With the default immediate StorageClass installed, create a PVC:
 
 ```yaml
 apiVersion: v1
@@ -196,6 +200,22 @@ spec:
 ```
 
 Then mount it in a pod as usual.
+
+To delay provisioning until the first pod is scheduled, use the second class:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-data-wait
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: kloud-csi-wait-for-first-consumer
+  resources:
+    requests:
+      storage: 10Gi
+```
 
 ## Configuration reference
 

@@ -3,8 +3,8 @@ package driver
 import (
 	"context"
 
-	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/KubelanCloud/kks-csi-plugin/pkg/csi/provisioner"
+	"github.com/container-storage-interface/spec/lib/go/csi"
 )
 
 type ControllerServer struct {
@@ -33,8 +33,9 @@ func (s *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolu
 	}
 
 	vol, err := s.d.backend.CreateVolume(ctx, provisioner.CreateVolumeRequest{
-		Name:      sanitizeVolumeName(req.GetName()),
-		SizeBytes: capacity,
+		Name:       sanitizeVolumeName(req.GetName()),
+		SizeBytes:  capacity,
+		Parameters: req.GetParameters(),
 	})
 	if err != nil {
 		return nil, internalError(err)
